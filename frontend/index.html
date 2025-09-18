@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF Maker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="chat-container">
+            <div class="chat-header">
+                <img src="logo.png" alt="CTF Maker Logo" class="logo">
+                <h2>CTF Maker</h2>
+            </div>
+            <div class="chat-box" id="chat-box">
+                <!-- Chat messages will be appended here -->
+            </div>
+            <div class="chat-input">
+                <select id="category-select">
+                    <option value="Reverse Engineering">Reverse Engineering</option>
+                    <option value="Web Exploitation">Web Exploitation</option>
+                    <option value="Cryptography">Cryptography</option>
+                    <option value="Forensics">Forensics</option>
+                    <option value="Pwn">Pwn</option>
+                    <option value="Misc">Misc</option>
+                </select>
+                <textarea id="message-input" placeholder="Type your message or paste code/images..."></textarea>
+                <button id="paste-code-button" title="Paste Code">{;}</button>
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+        <div class="image-preview-container" id="image-preview-container">
+            <h3>Image Previews</h3>
+            <div id="image-previews"></div>
+        </div>
+    </div>
+
+    <div id="page-overlay"></div>
+
+    <!-- Code Paste Modal -->
+    <div id="code-modal" class="modal">
+        <div class="modal-content">
+            <h3>Paste Your Code</h3>
+            <textarea id="code-input" placeholder="Paste code here..."></textarea>
+            <div class="modal-actions">
+                <button id="add-code-button">Add Code</button>
+                <button id="cancel-code-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
