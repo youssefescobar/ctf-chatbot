@@ -167,7 +167,7 @@ async def generate_writeup(request: GenerateRequest):
 @app.get("/")
 async def root():
     print("running")
-    return {"message": "CTF Writeup Generator API is running. Visit /docs for details."}
+    return "CTF Writeup Generator API is running."
 
 # --- Main Execution ---
 
