@@ -34,7 +34,7 @@ try:
 
     if GOOGLE_API_KEY:
         genai.configure(api_key=GOOGLE_API_KEY)
-        gemini_model = genai.GenerativeModel(model_name='gemini-1.5-flash-latest')
+        gemini_model = genai.GenerativeModel(model_name='gemini-2.5-flash')
     else:
         gemini_model = None
         print("[ERROR] GOOGLE_API_KEY not found. Generation features will be disabled.")
@@ -116,9 +116,21 @@ def generate_with_gemini(user_prompt: str, few_shot_examples: list[str]):
         print(f"[ERROR] Gemini API call failed: {e}")
         raise HTTPException(status_code=500, detail=f"An error occurred with the Gemini API: {e}")
 
+import base64
+import uuid
+import zipfile
+from pathlib import Path
+import shutil
+from fastapi.responses import FileResponse
+import pypandoc
+
 # --- FastAPI Application ---
 
 from fastapi.middleware.cors import CORSMiddleware
+
+# Create a temporary directory for images
+TEMP_IMAGE_DIR = Path('temp_images')
+TEMP_IMAGE_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(
     title="CTF Writeup Generator API",
@@ -127,13 +139,14 @@ app = FastAPI(
 )
 
 # --- CORS Middleware ---
+
 # This allows the frontend (running on a different origin) to communicate with the backend.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*", "http://localhost:8000", "http://127.0.0.1:8000", "http://localhost:5500"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class GenerateRequest(BaseModel):
@@ -143,31 +156,116 @@ class GenerateRequest(BaseModel):
 
 class GenerateResponse(BaseModel):
     generated_text: str
-    mappings: dict
+    session_id: str
+
+class DownloadRequest(BaseModel):
+    session_id: str
+    markdown_content: str
+
+def replace_placeholders(text: str, mappings: dict, session_id: str) -> str:
+    """Replaces image and code placeholders with markdown-formatted content."""
+    session_dir = TEMP_IMAGE_DIR / session_id
+    session_dir.mkdir(exist_ok=True)
+
+    for placeholder, content in mappings.items():
+        if placeholder.startswith("[[img"):
+            try:
+                # Decode the base64 string
+                header, data = content.split(',', 1)
+                image_data = base64.b64decode(data)
+                
+                # Get the file extension
+                file_ext = header.split('/')[1].split(';')[0]
+                
+                # Create a unique filename
+                image_filename = f"{str(uuid.uuid4())}.{file_ext}"
+                image_path = session_dir / image_filename
+                
+                # Save the image
+                with open(image_path, "wb") as f:
+                    f.write(image_data)
+                
+                # Replace placeholder with relative path
+                text = text.replace(placeholder, f"![{placeholder}]({session_id}/{image_filename})")
+
+            except Exception as e:
+                print(f"[ERROR] Failed to process image {placeholder}: {e}")
+                # Replace with a broken image link if processing fails
+                text = text.replace(placeholder, f"![{placeholder} (processing failed)]()")
+
+        elif placeholder.startswith("[[code"):
+            # Format code into a markdown code block
+            text = text.replace(placeholder, f"```\n{content}\n```")
+    return text
 
 @app.post("/generate", response_model=GenerateResponse)
 async def generate_writeup(request: GenerateRequest):
     """
-    Receives a user prompt, finds relevant examples, and generates a CTF writeup.
+    Receives a user prompt, finds relevant examples, generates a CTF writeup,
+    and replaces placeholders.
     """
     print(f"Received request for category: {request.category}")
     
+    session_id = str(uuid.uuid4())
+
     # 1. Find few-shot examples using the RAG pipeline
     few_shot_examples = find_few_shot_examples(request.prompt, request.category)
     
-    # 2. Generate the final completion with Gemini
-    generated_text = generate_with_gemini(request.prompt, few_shot_examples)
+    # 2. Generate the initial writeup with placeholders
+    generated_text_with_placeholders = generate_with_gemini(request.prompt, few_shot_examples)
     
-    # 3. Return the generated text and the original mappings
+    # 3. Replace placeholders with actual content
+    final_generated_text = replace_placeholders(generated_text_with_placeholders, request.mappings, session_id)
+    
+    # 4. Return the final text and the session ID
     return {
-        "generated_text": generated_text,
-        "mappings": request.mappings
+        "generated_text": final_generated_text,
+        "session_id": session_id
     }
+
+@app.post("/download-package")
+async def download_package(request: DownloadRequest):
+    session_dir = TEMP_IMAGE_DIR / request.session_id
+    if not session_dir.exists():
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    zip_path = TEMP_IMAGE_DIR / f"{request.session_id}.zip"
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        # Write the markdown file
+        zipf.writestr("writeup.md", request.markdown_content)
+        # Add images to the zip file
+        for image_file in session_dir.glob("*"):
+            zipf.write(image_file, arcname=f"{request.session_id}/{image_file.name}")
+
+    # Do NOT delete session_dir here, so docx download works after zip
+    # Cleanup can be done later or via a scheduled job
+
+    return FileResponse(zip_path, media_type='application/zip', filename='writeup_package.zip')
+
+@app.post("/download-docx")
+async def download_docx(request: DownloadRequest):
+    # Create a temporary markdown file
+    temp_md_path = TEMP_IMAGE_DIR / f"{request.session_id}.md"
+    with open(temp_md_path, "w", encoding="utf-8") as f:
+        f.write(request.markdown_content)
+
+    # Convert to docx
+    output_docx_path = TEMP_IMAGE_DIR / f"{request.session_id}.docx"
+    try:
+        pypandoc.convert_file(str(temp_md_path), 'docx', outputfile=str(output_docx_path))
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"Pandoc not installed: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to convert to DOCX: {e}")
+
+    # Clean up the temp markdown file
+    os.remove(temp_md_path)
+
+    return FileResponse(output_docx_path, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename='writeup.docx')
 
 @app.get("/")
 async def root():
-    print("running")
-    return "CTF Writeup Generator API is running."
+    return {"status": "CTF Writeup Generator API is running."}
 
 # --- Main Execution ---
 

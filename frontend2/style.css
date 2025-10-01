@@ -1,0 +1,227 @@
+:root {
+    --primary-color: #0a0a23;
+    --secondary-color: #1b1b32;
+    --border-color: #3b3b4f;
+    --text-color: #f5f6f7;
+    --accent-color: #d0d0d5;
+    --button-bg: #feac32;
+    --button-text: #0a0a23;
+}
+
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    margin-right: 15px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.8em;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.input-section h2, .output-section h2 {
+    font-size: 1.4em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+textarea, select {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+textarea {
+    min-height: 150px;
+    resize: vertical;
+    transition: min-height 0.3s ease-in-out;
+}
+
+#prompt.expanded {
+    min-height: 300px;
+}
+
+#mappings-container .mapping-item {
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: flex-start;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+#mappings-container .mapping-header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#mappings-container .mapping-header label {
+    font-weight: bold;
+}
+
+#mappings-container input[type="file"], 
+#mappings-container textarea {
+    width: 100%; /* Ensure inputs take full width */
+}
+
+.image-preview {
+    max-width: 100px;
+    max-height: 100px;
+    border: 1px solid var(--border-color);
+    margin-top: 10px;
+    border-radius: 4px;
+}
+
+.code-preview {
+    background-color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    padding: 5px;
+    border-radius: 4px;
+    margin-top: 10px;
+    max-height: 100px;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-all;
+    width: 100%;
+}
+
+.delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    margin-left: auto; /* Pushes the button to the right */
+}
+
+.delete-btn:hover {
+    background-color: #ff1a1a;
+}
+
+#mappings-container .mapping-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+#mappings-container input[type="file"], #mappings-container textarea {
+    flex-grow: 1;
+}
+
+button {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 15px;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #fecb6e;
+}
+
+button:disabled {
+    background-color: #5a5a6e;
+    cursor: not-allowed;
+}
+
+.output-section {
+    border-left: 2px solid var(--border-color);
+    padding-left: 20px;
+}
+
+#output {
+    background-color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 15px;
+    min-height: 400px;
+    white-space: pre-wrap; /* To respect newlines from the backend */
+}
+
+.download-buttons {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Markdown-like styling */
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.markdown-body code {
+    background-color: var(--primary-color);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.markdown-body pre {
+    background-color: var(--primary-color);
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+.markdown-body blockquote {
+    border-left: 4px solid var(--accent-color);
+    padding-left: 10px;
+    color: var(--accent-color);
+    margin-left: 0;
+}
+
+@media (max-width: 800px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+
+    .output-section {
+        border-left: none;
+        padding-left: 0;
+        border-top: 2px solid var(--border-color);
+        padding-top: 20px;
+    }
+}

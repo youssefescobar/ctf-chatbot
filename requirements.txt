@@ -4,4 +4,5 @@ python-dotenv
 google-generativeai
 fastapi
 uvicorn[standard]
+pypandoc
 tf-keras

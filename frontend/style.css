@@ -89,10 +89,18 @@ body {
     padding: 30px 20px;
     overflow-y: auto;
     background-color: #f9f9f9;
+    height: 350px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
 }
 
 .message {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    max-width: 80%;
+    word-break: break-word;
     display: flex;
     animation: fadeIn 0.3s ease-in-out;
 }
@@ -104,6 +112,8 @@ body {
 
 .user-message {
     justify-content: flex-end;
+    background: #e0f7fa;
+    align-self: flex-end;
 }
 
 .message-content {
@@ -124,6 +134,8 @@ body {
     background-color: #e9e9eb;
     color: #333;
     border-bottom-left-radius: 8px;
+    background: #fffde7;
+    align-self: flex-start;
 }
 
 /* --- Normal Mode Input Area --- */
@@ -213,11 +225,18 @@ body {
     font-size: 0.8em;
     margin-top: 10px;
     transition: all 0.2s ease;
+    margin: 6px 8px 0 0;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    background: #1976d2;
+    color: #fff;
 }
 
 .download-btn:hover {
     background-color: #007bff;
     color: #fff;
+    background: #1565c0;
 }
 
 /* --- Focus Mode Styles --- */
@@ -331,4 +350,14 @@ body {
 #cancel-code-button {
     background-color: #6c757d;
     color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .main-wrapper {
+        flex-direction: column;
+    }
+    .chat-box {
+        height: 220px;
+    }
 }

@@ -22,15 +22,54 @@ document.addEventListener('DOMContentLoaded', () => {
     let imgCounter = 1;
     let lastCursorPosition = 0;
     let isFocusMode = false;
+    let currentSessionId = null;
+
+    const chatInputForm = document.querySelector('.chat-input-form');
 
     // --- Event Listeners ---
-    sendButton.addEventListener('click', sendMessage);
+    // Prevent form submit from reloading the page
+    chatInputForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        sendMessage();
+        return false;
+    });
+
+    // Prevent send button click from reloading the page
+    sendButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        sendMessage();
+        return false;
+    });
+
+    // Add Enter key handler for textarea
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            sendMessage();
+            return false;
+        }
+    });
+
     messageInput.addEventListener('focusout', () => lastCursorPosition = messageInput.selectionStart);
     messageInput.addEventListener('paste', handlePaste);
 
-    pasteCodeButton.addEventListener('click', () => codeModal.style.display = 'flex');
-    cancelCodeButton.addEventListener('click', () => codeModal.style.display = 'none');
-    addCodeButton.addEventListener('click', addCodeFromModal);
+    pasteCodeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        codeModal.style.display = 'flex';
+    });
+    
+    cancelCodeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        codeModal.style.display = 'none';
+    });
+    
+    addCodeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        addCodeFromModal();
+    });
 
     // Focus Mode Listeners
     messageInput.addEventListener('click', enterFocusMode);
@@ -53,15 +92,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core Functions ---
     async function sendMessage() {
+        // Prevent multiple simultaneous sends
+        if (sendButton.disabled) return;
+        
+        sendButton.disabled = true;
         const messageText = messageInput.value.trim();
-        if (messageText === '') return;
+        
+        if (messageText === '') {
+            sendButton.disabled = false;
+            return;
+        }
 
-        if (isFocusMode) exitFocusMode(); // Exit focus mode on send
+        if (isFocusMode) exitFocusMode();
 
         appendMessage(messageText, 'user');
         messageInput.value = '';
-
-        const thinkingMessage = appendMessage('Thinking...', 'bot');
+        let thinkingMessage = appendMessage('Thinking...', 'bot');
 
         const requestBody = {
             prompt: messageText,
@@ -76,21 +122,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(requestBody),
             });
 
-            chatBox.removeChild(thinkingMessage);
-
             if (!response.ok) {
-                const errorData = await response.json();
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = {};
+                }
                 throw new Error(errorData.detail || 'An unknown error occurred.');
             }
 
             const data = await response.json();
-            const botMessage = appendMessage(data.generated_text, 'bot');
-            addDownloadButton(botMessage, data.generated_text);
+            currentSessionId = data.session_id;
+            
+            // Replace thinking message with actual response
+            if (thinkingMessage && thinkingMessage.parentNode) {
+                thinkingMessage.textContent = data.generated_text;
+                addDownloadButtons(thinkingMessage, data.generated_text);
+            } else {
+                // Fallback: create new message if thinking message was lost
+                const botMessage = appendMessage(data.generated_text, 'bot');
+                addDownloadButtons(botMessage, data.generated_text);
+            }
 
         } catch (error) {
-            chatBox.removeChild(thinkingMessage);
-            appendMessage(`Error: ${error.message}`, 'bot');
+            // Replace thinking message with error
+            if (thinkingMessage && thinkingMessage.parentNode) {
+                thinkingMessage.textContent = `Error: ${error.message}`;
+            } else {
+                appendMessage(`Error: ${error.message}`, 'bot');
+            }
             console.error('Error calling backend:', error);
+        } finally {
+            sendButton.disabled = false;
         }
 
         // Reset for next message
@@ -119,12 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (items[i].type.indexOf('image') !== -1) {
                 e.preventDefault();
                 const blob = items[i].getAsFile();
-                const placeholder = `[[img${imgCounter++}]]`;
-                const tempUrl = URL.createObjectURL(blob);
-                placeholderMap[placeholder] = tempUrl;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64Url = event.target.result;
+                    const placeholder = `[[img${imgCounter++}]]`;
+                    placeholderMap[placeholder] = base64Url;
 
-                insertPlaceholder(placeholder, messageInput.selectionStart);
-                addImagePreview(tempUrl, placeholder);
+                    insertPlaceholder(placeholder, messageInput.selectionStart);
+                    addImagePreview(base64Url, placeholder);
+                };
+                reader.readAsDataURL(blob);
             }
         }
     }
@@ -154,37 +222,100 @@ document.addEventListener('DOMContentLoaded', () => {
     function appendMessage(text, sender) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
-        const messageContent = document.createElement('div');
-        messageContent.classList.add('message-content');
-        messageContent.innerText = text;
-        messageElement.appendChild(messageContent);
+        messageElement.textContent = text;
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
         return messageElement;
     }
 
-    function addDownloadButton(messageElement, content) {
-        const downloadBtn = document.createElement('button');
-        downloadBtn.innerText = 'Download .md';
-        downloadBtn.className = 'download-btn';
-        downloadBtn.onclick = () => downloadMarkdown(content);
-        const messageContent = messageElement.querySelector('.message-content');
-        if (messageContent) {
-            messageContent.appendChild(document.createElement('br'));
-            messageContent.appendChild(document.createElement('br'));
-            messageContent.appendChild(downloadBtn);
+    function addDownloadButtons(messageElement, content) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'download-buttons';
+
+        const downloadZipBtn = document.createElement('button');
+        downloadZipBtn.innerText = 'Download Package (.zip)';
+        downloadZipBtn.className = 'download-btn';
+        downloadZipBtn.onclick = (e) => {
+            e.preventDefault();
+            downloadPackage(content);
+        };
+
+        const downloadDocxBtn = document.createElement('button');
+        downloadDocxBtn.innerText = 'Download as Word (.docx)';
+        downloadDocxBtn.className = 'download-btn';
+        downloadDocxBtn.onclick = (e) => {
+            e.preventDefault();
+            downloadDocx(content);
+        };
+
+        buttonContainer.appendChild(downloadZipBtn);
+        buttonContainer.appendChild(downloadDocxBtn);
+
+        messageElement.appendChild(document.createElement('br'));
+        messageElement.appendChild(buttonContainer);
+    }
+
+    async function downloadPackage(content) {
+        if (!currentSessionId) {
+            alert("No session ID found. Please generate a writeup first.");
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8000/download-package', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: currentSessionId, markdown_content: content }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'writeup_package.zip';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert("Failed to download package.");
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+            alert("Failed to download package.");
         }
     }
 
-    function downloadMarkdown(content) {
-        const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'writeup.md';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    async function downloadDocx(content) {
+        if (!currentSessionId) {
+            alert("No session ID found. Please generate a writeup first.");
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8000/download-docx', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: currentSessionId, markdown_content: content }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'writeup.docx';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert("Failed to download .docx file.");
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+            alert("Failed to download .docx file.");
+        }
     }
 });
