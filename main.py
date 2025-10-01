@@ -80,6 +80,43 @@ def find_few_shot_examples(query_prompt: str, query_category: str, top_k: int = 
 def generate_with_gemini(user_prompt: str, few_shot_examples: list[str]):
     if not gemini_model:
         raise HTTPException(status_code=500, detail="Gemini model is not initialized. Check API key.")
+    
+    # Input validation
+    if not user_prompt or not user_prompt.strip():
+        raise HTTPException(status_code=400, detail="Please provide a valid prompt.")
+    
+    # Check if the prompt is too short or lacks substance
+    stripped_prompt = user_prompt.strip()
+    if len(stripped_prompt) < 20:
+        raise HTTPException(
+            status_code=400, 
+            detail="Your prompt is too short. Please provide a detailed description of your CTF challenge steps."
+        )
+    
+    # Check for common meaningless inputs
+    meaningless_inputs = ['test', 'hi', 'hello', 'hey', 'testing', 'example', 'sample']
+    if stripped_prompt.lower() in meaningless_inputs:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide a meaningful CTF writeup prompt with actual challenge steps, not just a test message."
+        )
+    
+    # Check if the prompt contains at least some CTF-relevant content indicators
+    # This is a basic check - you can expand this list
+    has_ctf_indicators = any(keyword in stripped_prompt.lower() for keyword in [
+        'challenge', 'flag', 'ctf', 'exploit', 'vulnerability', 'pwn', 'reverse',
+        'web', 'crypto', 'forensic', 'binary', 'payload', 'script', 'command',
+        'server', 'file', 'code', 'analyze', 'decode', 'bypass', 'leak', 'scan'
+    ])
+    
+    # Also check for placeholder tags which indicate structured input
+    has_placeholders = '[[' in stripped_prompt and ']]' in stripped_prompt
+    
+    if not has_ctf_indicators and not has_placeholders:
+        raise HTTPException(
+            status_code=400,
+            detail="Your prompt doesn't seem to contain CTF-related content. Please provide steps from a CTF challenge with technical details."
+        )
 
     examples_str = "\n\n---\n\n".join(few_shot_examples) if few_shot_examples else "No specific examples available."
     
@@ -115,7 +152,7 @@ def generate_with_gemini(user_prompt: str, few_shot_examples: list[str]):
     except Exception as e:
         print(f"[ERROR] Gemini API call failed: {e}")
         raise HTTPException(status_code=500, detail=f"An error occurred with the Gemini API: {e}")
-
+    
 import base64
 import uuid
 import zipfile
