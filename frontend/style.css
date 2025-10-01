@@ -29,10 +29,47 @@ body {
 
 .image-preview-container {
     width: 30%;
-    background-color: #f9f9f9;
+    background-color: #e0f7fa;
     border-left: 1px solid #e0e0e0;
     padding: 20px;
     overflow-y: auto;
+}
+
+.code-preview-container {
+    width: 30%;
+    background-color: #f0f2f5;
+    border-left: 1px solid #e0e0e0;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.code-preview-container h3 {
+    margin-top: 0;
+    color: #333;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.code-preview {
+    margin-bottom: 15px;
+}
+
+.code-preview pre {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.code-preview p {
+    margin: 5px 0 0;
+    font-size: 0.9em;
+    color: #555;
+    text-align: center;
+    font-weight: 500;
 }
 
 .image-preview-container h3 {
@@ -62,10 +99,10 @@ body {
 }
 
 .chat-header {
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    color: #fff;
+    background: #ffffff;
+    color: #000000;
     padding: 15px 20px;
-    border-bottom: 1px solid #0056b3;
+    border-bottom: 1px solid #e0e0e0;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -112,7 +149,7 @@ body {
 
 .user-message {
     justify-content: flex-end;
-    background: #e0f7fa;
+    background: #fffde7;
     align-self: flex-end;
 }
 
@@ -131,10 +168,9 @@ body {
 }
 
 .bot-message .message-content {
-    background-color: #e9e9eb;
+    background-color: #e0f7fa;
     color: #333;
     border-bottom-left-radius: 8px;
-    background: #fffde7;
     align-self: flex-start;
 }
 
@@ -214,29 +250,42 @@ body {
     font-weight: 600;
 }
 
-.download-btn {
-    background-color: #f0f2f5;
-    color: #007bff;
-    border: 1px solid #007bff;
-    border-radius: 5px;
-    padding: 5px 10px;
-    cursor: pointer;
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.8em;
+.download-buttons {
+    display: none; /* Initially hidden */
     margin-top: 10px;
-    transition: all 0.2s ease;
-    margin: 6px 8px 0 0;
-    padding: 6px 14px;
+}
+
+.download-btn {
+    background-color: #1976d2;
+    color: #fff;
     border: none;
     border-radius: 4px;
-    background: #1976d2;
-    color: #fff;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9em;
+    margin-right: 10px;
+    transition: background-color 0.2s ease;
 }
 
 .download-btn:hover {
-    background-color: #007bff;
-    color: #fff;
-    background: #1565c0;
+    background-color: #1565c0;
+}
+
+.loading-animation {
+    display: none; /* Initially hidden */
+    margin: 15px auto;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* --- Focus Mode Styles --- */

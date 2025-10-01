@@ -1,6 +1,4 @@
 .env
-ctf_dataset.json
-gen.py
-query.py
-upload.py
-.vercel
+scripts/
+temp_images/
+venv/

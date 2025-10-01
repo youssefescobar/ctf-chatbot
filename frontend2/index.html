@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="modal-overlay"></div>
     <div class="container">
         <header>
             <img src="logo.png" alt="Logo" class="logo">
@@ -35,17 +36,17 @@
 
                 <h2>Assets (Images & Code)</h2>
                 <div id="mappings-container"></div>
-                <button id="add-image-btn">Add Image</button>
-                <button id="add-code-btn">Add Code Snippet</button>
-                
-                <button id="generate-btn">Generate Writeup</button>
+                <button id="add-image-btn" type="button">Add Image</button>
+                <button id="add-code-btn" type="button">Add Code Snippet</button>
             </div>
             <div class="output-section">
                 <h2>Generated Writeup</h2>
                 <div id="output" class="markdown-body"></div>
+                <button id="close-fullscreen-btn" type="button">Close</button>
                 <div class="download-buttons">
-                    <button id="download-zip-btn" disabled>Download as ZIP</button>
-                    <button id="download-docx-btn" disabled>Download as DOCX</button>
+                    <button id="generate-btn" type="button">Generate Writeup</button>
+                    <button id="download-zip-btn" type="button" disabled>Download as ZIP</button>
+                    <button id="download-docx-btn" type="button" disabled>Download as DOCX</button>
                 </div>
             </div>
         </main>

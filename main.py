@@ -244,6 +244,10 @@ async def download_package(request: DownloadRequest):
 
 @app.post("/download-docx")
 async def download_docx(request: DownloadRequest):
+    session_dir = TEMP_IMAGE_DIR / request.session_id
+    if not session_dir.exists():
+        raise HTTPException(status_code=404, detail="Session not found.")
+
     # Create a temporary markdown file
     temp_md_path = TEMP_IMAGE_DIR / f"{request.session_id}.md"
     with open(temp_md_path, "w", encoding="utf-8") as f:
@@ -252,7 +256,12 @@ async def download_docx(request: DownloadRequest):
     # Convert to docx
     output_docx_path = TEMP_IMAGE_DIR / f"{request.session_id}.docx"
     try:
-        pypandoc.convert_file(str(temp_md_path), 'docx', outputfile=str(output_docx_path))
+        pypandoc.convert_file(
+            str(temp_md_path),
+            'docx',
+            outputfile=str(output_docx_path),
+            extra_args=[f'--resource-path={str(TEMP_IMAGE_DIR)}']
+        )
     except OSError as e:
         raise HTTPException(status_code=500, detail=f"Pandoc not installed: {e}")
     except Exception as e:

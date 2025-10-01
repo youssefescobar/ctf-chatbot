@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBox = document.getElementById('chat-box');
     const categorySelect = document.getElementById('category-select');
     const imagePreviewContainer = document.getElementById('image-previews');
+    const codePreviewContainer = document.getElementById('code-previews');
 
     // Modal elements
     const codeModal = document.getElementById('code-modal');
@@ -107,7 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         appendMessage(messageText, 'user');
         messageInput.value = '';
-        let thinkingMessage = appendMessage('Thinking...', 'bot');
+        
+        const loadingAnimation = showLoadingAnimation();
 
         const requestBody = {
             prompt: messageText,
@@ -135,23 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             currentSessionId = data.session_id;
             
-            // Replace thinking message with actual response
-            if (thinkingMessage && thinkingMessage.parentNode) {
-                thinkingMessage.textContent = data.generated_text;
-                addDownloadButtons(thinkingMessage, data.generated_text);
-            } else {
-                // Fallback: create new message if thinking message was lost
-                const botMessage = appendMessage(data.generated_text, 'bot');
-                addDownloadButtons(botMessage, data.generated_text);
-            }
+            hideLoadingAnimation(loadingAnimation);
+            const botMessage = appendMessage('Done!', 'bot');
+            addDownloadButtons(botMessage, data.generated_text);
 
         } catch (error) {
-            // Replace thinking message with error
-            if (thinkingMessage && thinkingMessage.parentNode) {
-                thinkingMessage.textContent = `Error: ${error.message}`;
-            } else {
-                appendMessage(`Error: ${error.message}`, 'bot');
-            }
+            hideLoadingAnimation(loadingAnimation);
+            appendMessage(`Error: ${error.message}`, 'bot');
             console.error('Error calling backend:', error);
         } finally {
             sendButton.disabled = false;
@@ -162,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         codeCounter = 1;
         imgCounter = 1;
         imagePreviewContainer.innerHTML = '';
+        codePreviewContainer.innerHTML = '';
     }
 
     function addCodeFromModal() {
@@ -172,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         placeholderMap[placeholder] = codeText;
 
         insertPlaceholder(placeholder, lastCursorPosition);
+        addCodePreview(codeText, placeholder);
 
         codeInput.value = '';
         codeModal.style.display = 'none';
@@ -219,6 +213,18 @@ document.addEventListener('DOMContentLoaded', () => {
         imagePreviewContainer.appendChild(previewWrapper);
     }
 
+    function addCodePreview(code, placeholder) {
+        const previewWrapper = document.createElement('div');
+        previewWrapper.className = 'code-preview';
+        const pre = document.createElement('pre');
+        pre.innerText = code;
+        const p = document.createElement('p');
+        p.innerText = placeholder;
+        previewWrapper.appendChild(pre);
+        previewWrapper.appendChild(p);
+        codePreviewContainer.appendChild(previewWrapper);
+    }
+
     function appendMessage(text, sender) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', `${sender}-message`);
@@ -231,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function addDownloadButtons(messageElement, content) {
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'download-buttons';
+        buttonContainer.style.display = 'block'; // Make the container visible
 
         const downloadZipBtn = document.createElement('button');
         downloadZipBtn.innerText = 'Download Package (.zip)';
@@ -253,6 +260,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         messageElement.appendChild(document.createElement('br'));
         messageElement.appendChild(buttonContainer);
+    }
+
+    function showLoadingAnimation() {
+        const loadingAnimation = document.createElement('div');
+        loadingAnimation.className = 'loading-animation';
+        loadingAnimation.style.display = 'block';
+        chatBox.appendChild(loadingAnimation);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return loadingAnimation;
+    }
+
+    function hideLoadingAnimation(loadingAnimation) {
+        if (loadingAnimation && loadingAnimation.parentNode) {
+            loadingAnimation.parentNode.removeChild(loadingAnimation);
+        }
     }
 
     async function downloadPackage(content) {

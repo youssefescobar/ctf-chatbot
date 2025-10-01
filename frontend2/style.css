@@ -34,7 +34,7 @@ header {
 }
 
 .logo {
-    width: 50px;
+    width: 100px;
     height: 50px;
     margin-right: 15px;
 }
@@ -124,6 +124,40 @@ textarea {
     width: 100%;
 }
 
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    display: none; /* Hidden by default */
+}
+
+.output-fullscreen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Use vw for width and vh for height to allow different proportions */
+    width: 80vw;  /* 80% of viewport width */
+    height: 200vh; /* 90% of viewport height */
+    max-width: 1400px; /* Optional: set a maximum width */
+    z-index: 1000;
+    box-sizing: border-box;
+    margin: 0;
+    border-radius: 8px;
+}
+
+#close-fullscreen-btn {
+    position: absolute; /* Position relative to the fullscreen output box */
+    top: 10px;
+    right: 10px;
+    z-index: 1001;
+    display: none; /* Hidden by default */
+}
+
 .delete-btn {
     background-color: #ff4d4d;
     color: white;
@@ -177,7 +211,12 @@ button:disabled {
     border-radius: 4px;
     padding: 15px;
     min-height: 400px;
-    white-space: pre-wrap; /* To respect newlines from the backend */
+    height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all; /* More aggressive word breaking */
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .download-buttons {

@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const outputEl = get('output');
     const downloadZipBtn = get('download-zip-btn');
     const downloadDocxBtn = get('download-docx-btn');
+    const closeFullscreenBtn = get('close-fullscreen-btn');
+    const modalOverlay = get('modal-overlay');
 
     let imageCounter = 1;
     let codeCounter = 1;
@@ -126,7 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
         mappingsContainer.appendChild(div);
     });
 
-    generateBtn.addEventListener('click', async () => {
+    generateBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
         generateBtn.disabled = true;
         outputEl.textContent = 'Generating...';
 
@@ -168,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const result = await response.json();
+            console.log('Backend Response:', result);
             outputEl.textContent = result.generated_text;
             currentSessionId = result.session_id;
 
@@ -220,5 +224,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     downloadDocxBtn.addEventListener('click', () => {
         handleDownload(`${API_URL}/download-docx`, 'writeup.docx');
+    });
+
+    outputEl.addEventListener('click', () => {
+        if (!outputEl.classList.contains('output-fullscreen')) {
+            modalOverlay.style.display = 'block';
+            outputEl.classList.add('output-fullscreen');
+            closeFullscreenBtn.style.display = 'block';
+        }
+    });
+
+    closeFullscreenBtn.addEventListener('click', () => {
+        modalOverlay.style.display = 'none';
+        outputEl.classList.remove('output-fullscreen');
+        closeFullscreenBtn.style.display = 'none';
     });
 });
