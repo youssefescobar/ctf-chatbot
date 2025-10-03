@@ -9,8 +9,12 @@ echo "Updating system packages..."
 sudo apt-get update -y
 sudo apt-get upgrade -y
 
+echo "Cleaning up apt cache to save space..."
+sudo apt-get clean
+sudo apt-get autoremove -y
+
 echo "Installing dependencies (python, pip, nginx, pandoc)..."
-sudo apt-get install -y python3 python3-pip nginx pandoc
+sudo apt-get install -y python3 python3-pip nginx pandoc python3.12-venv
 
 # --- 2. Application Setup ---
 
@@ -20,8 +24,15 @@ python3 -m venv venv
 echo "Activating virtual environment..."
 source venv/bin/activate
 
-echo "Installing Python dependencies..."
-pip install -r requirements.txt
+# --- MODIFIED INSTALLATION FOR LOW DISK SPACE ---
+echo "Installing CPU-only PyTorch to save space..."
+# This installs a smaller, CPU-specific version of PyTorch, which sentence-transformers needs.
+pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+echo "Installing remaining Python dependencies..."
+# This installs the rest of the packages from your updated requirements.txt file.
+pip install --no-cache-dir -r requirements.txt
+# --- END OF MODIFICATION ---
 
 # Deactivate the virtual environment for now
 deactivate
@@ -90,7 +101,9 @@ EOL
 # --- 5. Start Services ---
 
 echo "Starting and enabling services..."
-
+sudo chmod 755 /home/ubuntu
+sudo chmod 755 /home/ubuntu/chatbot
+sudo chmod -R 755 /home/ubuntu/chatbot/frontend2
 sudo systemctl daemon-reload
 sudo systemctl restart nginx
 sudo systemctl enable nginx
@@ -105,7 +118,6 @@ echo "Your application should now be accessible at your EC2 instance's public IP
 echo ""
 echo "Important Notes:"
 echo "- Make sure your EC2 instance's security group allows inbound traffic on port 80 (HTTP)."
-echo "- The backend API is available at /api."
 echo "- To check the status of the backend service, run: sudo systemctl status chatbot.service"
 echo "- To see the backend logs, run: sudo journalctl -u chatbot.service -f"
 echo "-----------------------------------------------------"
